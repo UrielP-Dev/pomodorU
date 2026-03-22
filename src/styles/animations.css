@@ -1,0 +1,83 @@
+/* Entrada de paneles al cambiar de pestaña */
+@keyframes tab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-panel {
+  animation: tab-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Cabecera suave */
+@keyframes header-glow {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.03);
+  }
+}
+
+.app-header-kawaii .app-header-badge {
+  animation: header-glow 4s ease-in-out infinite;
+}
+
+/* Anillo del temporizador cuando corre */
+@keyframes timer-breath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+}
+
+.timer-ring-wrap.is-active {
+  animation: timer-breath 3.2s ease-in-out infinite;
+}
+
+/* Botones de pestaña */
+@keyframes tab-pop {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.tab.active {
+  animation: tab-pop 0.22s ease-out;
+}
+
+/* Modo pantalla completa: marco entra */
+@keyframes fullscreen-frame {
+  from {
+    opacity: 0.92;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.app-frame.is-fullscreen {
+  animation: fullscreen-frame 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel,
+  .app-header-kawaii .app-header-badge,
+  .timer-ring-wrap.is-active,
+  .tab.active,
+  .app-frame.is-fullscreen {
+    animation: none !important;
+  }
+}
