@@ -40,10 +40,11 @@ export function TimerHomeView({
         history={pom.history}
         running={pom.running}
         tasks={pom.tasks}
+        tasksReady={pom.tasksReady}
         activeTaskId={pom.activeTaskId}
         onSelectTask={pom.setActiveTaskId}
-        onQuickAddTask={(title) => {
-          const id = pom.addTask(title);
+        onQuickAddTask={async (title) => {
+          const id = await pom.addTask(title);
           pom.setActiveTaskId(id);
         }}
         totalWorkSessionsCompleted={pom.totalWorkSessionsCompleted}

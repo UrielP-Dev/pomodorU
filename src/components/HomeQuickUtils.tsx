@@ -37,9 +37,10 @@ type Props = {
   history: SessionRecord[];
   running: boolean;
   tasks: Task[];
+  tasksReady?: boolean;
   activeTaskId: string | null;
   onSelectTask: (id: string | null) => void;
-  onQuickAddTask: (title: string) => void;
+  onQuickAddTask: (title: string) => void | Promise<void>;
   totalWorkSessionsCompleted: number;
   onOpenSettings: () => void;
   onOpenStats: () => void;
@@ -51,6 +52,7 @@ export function HomeQuickUtils({
   history,
   running,
   tasks,
+  tasksReady = true,
   activeTaskId,
   onSelectTask,
   onQuickAddTask,
@@ -75,10 +77,10 @@ export function HomeQuickUtils({
     onChange({ workMinutes: work, shortBreakMinutes: short, longBreakMinutes: long });
   }
 
-  function submitTask(e: FormEvent): void {
+  async function submitTask(e: FormEvent): Promise<void> {
     e.preventDefault();
     if (!draft.trim()) return;
-    onQuickAddTask(draft.trim());
+    await Promise.resolve(onQuickAddTask(draft.trim()));
     setDraft("");
   }
 
@@ -146,15 +148,20 @@ export function HomeQuickUtils({
         <h3 className="home-utils-title">
           <IconTasks className="icon-inline" /> Tarea rápida
         </h3>
-        <form className="home-quick-task" onSubmit={submitTask}>
+        <form className="home-quick-task" onSubmit={(e) => void submitTask(e)}>
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="¿Qué estudias ahora?"
             maxLength={120}
             aria-label="Nueva tarea rápida"
+            disabled={!tasksReady}
           />
-          <button type="submit" className="btn btn-kawaii primary">
+          <button
+            type="submit"
+            className="btn btn-kawaii primary"
+            disabled={!tasksReady}
+          >
             Añadir
           </button>
         </form>

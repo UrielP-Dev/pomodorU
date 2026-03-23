@@ -6,7 +6,6 @@ const STORAGE_KEY = "pomodoru-v1";
 function defaultState(): AppPersistedState {
   return {
     settings: { ...DEFAULT_SETTINGS },
-    tasks: [],
     history: [],
     activeTaskId: null,
     totalWorkSessionsCompleted: 0,
@@ -20,7 +19,6 @@ export function loadState(): AppPersistedState {
     const parsed = JSON.parse(raw) as Partial<AppPersistedState>;
     return {
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
       history: Array.isArray(parsed.history) ? parsed.history : [],
       activeTaskId:
         typeof parsed.activeTaskId === "string" || parsed.activeTaskId === null

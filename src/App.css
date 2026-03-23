@@ -944,6 +944,57 @@ body {
   color: var(--muted);
 }
 
+.task-log-panel {
+  margin-top: 0.5rem;
+}
+
+.task-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.task-log-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  font-size: 0.88rem;
+}
+
+.task-log-action {
+  font-weight: 800;
+  color: color-mix(in srgb, var(--accent) 55%, #333);
+}
+
+.task-log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.task-log-id {
+  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--accent-soft) 40%, transparent);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+}
+
+.task-log-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .btn.icon {
   padding: 0.15rem 0.45rem;
   border: none;

@@ -8,6 +8,15 @@ import type { SessionMode, SessionRecord, Settings, Task } from "./types";
 import { appendHistory, loadState, patchSettings, saveState } from "./storage";
 import { playAlert, resumeAudioIfNeeded } from "../lib/audio";
 import { durationSecondsForMode } from "./durations";
+import {
+  deleteAllDoneTasks,
+  deleteTask,
+  insertTask,
+  listTasks,
+  migrateTasksFromLocalStorageIfNeeded,
+  readLegacyTasksFromLocalStorage,
+  updateTaskDone,
+} from "../db/taskRepository";
 
 function modeLabel(mode: SessionMode): string {
   switch (mode) {
@@ -44,7 +53,9 @@ async function notifyIfEnabled(
 export function usePomodoro() {
   const initial = useMemo(() => loadState(), []);
   const [settings, setSettings] = useState<Settings>(initial.settings);
-  const [tasks, setTasks] = useState<Task[]>(initial.tasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasksReady, setTasksReady] = useState(false);
+  const [taskLogVersion, setTaskLogVersion] = useState(0);
   const [history, setHistory] = useState<SessionRecord[]>(initial.history);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(
     initial.activeTaskId,
@@ -63,14 +74,35 @@ export function usePomodoro() {
   const skipElapsedRef = useRef<number | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        await migrateTasksFromLocalStorageIfNeeded();
+        const loaded = await listTasks();
+        if (!cancelled) setTasks(loaded);
+      } catch {
+        if (!cancelled) setTasks(readLegacyTasksFromLocalStorage());
+      } finally {
+        if (!cancelled) setTasksReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const bumpLog = useCallback(() => {
+    setTaskLogVersion((v) => v + 1);
+  }, []);
+
+  useEffect(() => {
     saveState({
       settings,
-      tasks,
       history,
       activeTaskId,
       totalWorkSessionsCompleted,
     });
-  }, [settings, tasks, history, activeTaskId, totalWorkSessionsCompleted]);
+  }, [settings, history, activeTaskId, totalWorkSessionsCompleted]);
 
   const activeTask = useMemo(
     () => tasks.find((t) => t.id === activeTaskId) ?? null,
@@ -99,31 +131,70 @@ export function usePomodoro() {
     [mode, running],
   );
 
-  const addTask = useCallback((title: string) => {
-    const t: Task = {
-      id: crypto.randomUUID(),
-      title: title.trim() || "Sin título",
-      done: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTasks((prev) => [t, ...prev]);
-    return t.id;
-  }, []);
+  const addTask = useCallback(
+    async (title: string) => {
+      const t: Task = {
+        id: crypto.randomUUID(),
+        title: title.trim() || "Sin título",
+        done: false,
+        createdAt: new Date().toISOString(),
+      };
+      try {
+        await insertTask(t);
+        setTasks((prev) => [t, ...prev]);
+        bumpLog();
+      } catch {
+        setTasks((prev) => [t, ...prev]);
+      }
+      return t.id;
+    },
+    [bumpLog],
+  );
 
-  const toggleTaskDone = useCallback((id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
-    );
-  }, []);
+  const toggleTaskDone = useCallback(
+    async (id: string) => {
+      const t = tasks.find((x) => x.id === id);
+      if (!t) return;
+      const nextDone = !t.done;
+      try {
+        await updateTaskDone(id, nextDone);
+        setTasks((prev) =>
+          prev.map((x) => (x.id === id ? { ...x, done: nextDone } : x)),
+        );
+        bumpLog();
+      } catch {
+        setTasks((prev) =>
+          prev.map((x) => (x.id === id ? { ...x, done: nextDone } : x)),
+        );
+      }
+    },
+    [tasks, bumpLog],
+  );
 
-  const removeTask = useCallback((id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    setActiveTaskId((cur) => (cur === id ? null : cur));
-  }, []);
+  const removeTask = useCallback(
+    async (id: string) => {
+      try {
+        await deleteTask(id);
+        setTasks((prev) => prev.filter((t) => t.id !== id));
+        setActiveTaskId((cur) => (cur === id ? null : cur));
+        bumpLog();
+      } catch {
+        setTasks((prev) => prev.filter((t) => t.id !== id));
+        setActiveTaskId((cur) => (cur === id ? null : cur));
+      }
+    },
+    [bumpLog],
+  );
 
-  const clearDoneTasks = useCallback(() => {
-    setTasks((prev) => prev.filter((t) => !t.done));
-  }, []);
+  const clearDoneTasks = useCallback(async () => {
+    try {
+      await deleteAllDoneTasks();
+      setTasks((prev) => prev.filter((t) => !t.done));
+      bumpLog();
+    } catch {
+      setTasks((prev) => prev.filter((t) => !t.done));
+    }
+  }, [bumpLog]);
 
   const recordSession = useCallback(
     (endedMode: SessionMode, durationSeconds: number) => {
@@ -254,6 +325,8 @@ export function usePomodoro() {
     settings,
     applySettingsPatch,
     tasks,
+    tasksReady,
+    taskLogVersion,
     addTask,
     toggleTaskDone,
     removeTask,

@@ -38,7 +38,8 @@ export interface SessionRecord {
 
 export interface AppPersistedState {
   settings: Settings;
-  tasks: Task[];
+  /** Las tareas viven en SQLite; este campo solo existía en datos antiguos (migración). */
+  tasks?: Task[];
   history: SessionRecord[];
   activeTaskId: string | null;
   totalWorkSessionsCompleted: number;

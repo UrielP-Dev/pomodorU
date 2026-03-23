@@ -66,9 +66,11 @@ export default function App() {
             {tab === "tasks" ? (
               <TasksPanel
                 tasks={pom.tasks}
+                tasksReady={pom.tasksReady}
+                taskLogVersion={pom.taskLogVersion}
                 activeTaskId={pom.activeTaskId}
                 onSelectTask={pom.setActiveTaskId}
-                onAdd={pom.addTask}
+                onAdd={(title) => void pom.addTask(title)}
                 onToggle={pom.toggleTaskDone}
                 onRemove={pom.removeTask}
                 onClearDone={pom.clearDoneTasks}
